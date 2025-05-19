@@ -19,23 +19,25 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: eu-north-1  # replace with your region
+        aws-region: eu-north-1
 
     - name: Deploy via SSM to EC2
       run: |
-        # Replace with your EC2 instance ID
         aws ssm send-command \
           --document-name "AWS-RunShellScript" \
           --comment "Deploy Node App via GitHub Actions" \
           --instance-ids "i-04ac66feee251e0c0" \
           --parameters 'commands=[
+            "sudo apt update -y",
+            "sudo apt install -y git nodejs npm",
             "cd ~/myapp || git clone https://github.com/12rutuja/nodejs-ssl-server.git ~/myapp",
             "cd ~/myapp",
             "git pull origin main",
             "npm install",
-            "pm2 startOrReload ecosystem.config.js || pm2 start server.js --name hello-node"
+            "sudo npm install -g pm2",
+            "pm2 start server.js --name hello-node || pm2 restart hello-node",
+            "pm2 save"
           ]' \
           --region eu-north-1 \
           --query "Command.CommandId" \
           --output text
-
