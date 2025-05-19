@@ -23,10 +23,11 @@ jobs:
 
     - name: Deploy via SSM to EC2
       run: |
+        # Replace with your EC2 instance ID
         aws ssm send-command \
           --document-name "AWS-RunShellScript" \
           --comment "Deploy Node App via GitHub Actions" \
-          --instance-ids "i-04ac66feee251e0c0" \  # 🔁 Replace with your EC2 instance ID
+          --instance-ids "i-04ac66feee251e0c0" \
           --parameters 'commands=[
             "cd ~/myapp || git clone https://github.com/12rutuja/nodejs-ssl-server.git ~/myapp",
             "cd ~/myapp",
@@ -37,3 +38,4 @@ jobs:
           --region eu-north-1 \
           --query "Command.CommandId" \
           --output text
+
