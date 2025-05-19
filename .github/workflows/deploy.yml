@@ -36,7 +36,8 @@ jobs:
             "npm install",
             "sudo npm install -g pm2",
             "pm2 start server.js --name hello-node || pm2 restart hello-node",
-            "pm2 save"
+            "pm2 save",
+            "pm2 startup | tail -1 | sed \\"s/^/sudo /\\" | bash"
           ]' \
           --region eu-north-1 \
           --query "Command.CommandId" \
