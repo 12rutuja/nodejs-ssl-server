@@ -1,24 +1,23 @@
-name: Deploy Node.js App to EC2 via OIDC
+name: Deploy Node.js App to EC2 via SSM (OIDC)
 
 on:
   push:
     branches:
       - main
 
+permissions:
+  id-token: write    # For OIDC
+  contents: read     # Read repo content
+
 jobs:
   deploy:
-    name: Deploy to EC2
     runs-on: ubuntu-latest
-
-    permissions:
-      id-token: write
-      contents: read
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Configure AWS Credentials
+    - name: Configure AWS Credentials (OIDC)
       uses: aws-actions/configure-aws-credentials@v2
       with:
         role-to-assume: arn:aws:iam::235494815059:role/github-actionOIDC
@@ -28,14 +27,12 @@ jobs:
       run: |
         aws ssm send-command \
           --document-name "AWS-RunShellScript" \
-          --comment "Deploy Node.js App via GitHub Actions" \
+          --comment "Deploy Node App via GitHub OIDC" \
           --instance-ids "i-04ac66feee251e0c0" \
           --parameters 'commands=[
-            "cd ~/myapp || git clone https://github.com/12rutuja/nodejs-ssl-server.git ~/myapp",
+            "cd ~/myapp && git pull origin main || (git clone https://github.com/12rutuja/nodejs-ssl-server.git ~/myapp && cd ~/myapp && npm install)",
             "cd ~/myapp",
-            "git pull origin main",
-            "npm install",
-            "pm2 start server.js --name hello-node || pm2 restart hello-node",
+            "pm2 restart hello-node || pm2 start server.js --name hello-node",
             "pm2 save"
           ]' \
           --region eu-north-1 \
