@@ -1,4 +1,4 @@
-name: Deploy Node.js App to EC2 via SSM
+name: Deploy Node.js App to EC2 via OIDC
 
 on:
   push:
@@ -10,6 +10,10 @@ jobs:
     name: Deploy to EC2
     runs-on: ubuntu-latest
 
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -17,28 +21,22 @@ jobs:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        role-to-assume: arn:aws:iam::235494815059:role/github-actionOIDC
         aws-region: eu-north-1
 
     - name: Deploy via SSM to EC2
       run: |
         aws ssm send-command \
           --document-name "AWS-RunShellScript" \
-          --comment "Deploy Node App via GitHub Actions" \
-          --instance-ids "i-04ac66feee251e0c0" \
+          --comment "Deploy Node.js App via GitHub Actions" \
+          --instance-ids "i-0exampleinstanceid" \
           --parameters 'commands=[
-            "sudo apt update -y",
-            "sudo apt install -y git nodejs npm",
             "cd ~/myapp || git clone https://github.com/12rutuja/nodejs-ssl-server.git ~/myapp",
             "cd ~/myapp",
             "git pull origin main",
             "npm install",
-            "sudo npm install -g pm2",
             "pm2 start server.js --name hello-node || pm2 restart hello-node",
-            "pm2 save",
-            "pm2 startup | tail -1 | sed \\"s/^/sudo /\\" | bash"
+            "pm2 save"
           ]' \
           --region eu-north-1 \
-          --query "Command.CommandId" \
           --output text
