@@ -6,8 +6,8 @@ on:
       - main
 
 permissions:
-  id-token: write    # For OIDC
-  contents: read     # Read repo content
+  id-token: write
+  contents: read
 
 jobs:
   deploy:
@@ -31,14 +31,40 @@ jobs:
           --instance-ids "i-04ac66feee251e0c0" \
           --parameters 'commands=[
             "APP_DIR=/home/ubuntu/myapp",
-            "if [ ! -d \"$APP_DIR\" ]; then git clone https://github.com/12rutuja/nodejs-ssl-server.git $APP_DIR && cd $APP_DIR && npm install; else cd $APP_DIR && git pull origin main; fi",
+            "REPO_URL=https://github.com/12rutuja/nodejs-ssl-server.git",
+
+            "# Clone or update the repo",
+            "if [ ! -d \"$APP_DIR\" ]; then \
+              git clone $REPO_URL $APP_DIR && cd $APP_DIR && npm install; \
+            else \
+              cd $APP_DIR && git reset --hard origin/main && git pull origin main && npm install; \
+            fi",
+
+            "# Ensure we are in app directory",
             "cd $APP_DIR",
+
+            "# Ensure Node.js and PM2 are present",
             "which node && node -v",
             "which pm2 || sudo npm install -g pm2",
-            "pm2 restart hello-node || pm2 start server.js --name hello-node",
+
+            "# Stop the previous app if running",
+            "pm2 delete hello-node || echo 'App not running yet'",
+
+            "# Start the app with PM2",
+            "pm2 start server.js --name hello-node",
+
+            "# Save PM2 state",
             "pm2 save",
-            "echo App is running from $(pwd)",
-            "pm2 list"
+
+            "# Optional: Enable PM2 startup on reboot",
+            "pm2 startup systemd -u ubuntu --hp /home/ubuntu",
+
+            "# Debugging: show PM2 list and logs",
+            "pm2 list",
+            "pm2 logs hello-node --lines 20",
+
+            "# Confirm working directory",
+            "echo App is running from $(pwd)"
           ]' \
           --region eu-north-1 \
           --output text
