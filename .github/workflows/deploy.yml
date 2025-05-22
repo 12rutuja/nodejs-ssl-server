@@ -30,10 +30,15 @@ jobs:
           --comment "Deploy Node App via GitHub OIDC" \
           --instance-ids "i-04ac66feee251e0c0" \
           --parameters 'commands=[
-            "cd ~/myapp && git pull origin main || (git clone https://github.com/12rutuja/nodejs-ssl-server.git ~/myapp && cd ~/myapp && npm install)",
-            "cd ~/myapp",
+            "APP_DIR=/home/ubuntu/myapp",
+            "if [ ! -d \"$APP_DIR\" ]; then git clone https://github.com/12rutuja/nodejs-ssl-server.git $APP_DIR && cd $APP_DIR && npm install; else cd $APP_DIR && git pull origin main; fi",
+            "cd $APP_DIR",
+            "which node && node -v",
+            "which pm2 || sudo npm install -g pm2",
             "pm2 restart hello-node || pm2 start server.js --name hello-node",
-            "pm2 save"
+            "pm2 save",
+            "echo App is running from $(pwd)",
+            "pm2 list"
           ]' \
           --region eu-north-1 \
           --output text
